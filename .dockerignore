@@ -1,0 +1,21 @@
+# 核心原则：排除所有构建不需要的文件
+# 这样能让 "Sending build context" 瞬间完成
+
+# 1. 忽略版本控制和IDE文件
+.git
+.gitignore
+.idea
+.vscode
+.DS_Store
+
+# 2. 忽略源代码和构建工具 (因为我们直接用外面构建好的 jar)
+src
+mvnw
+mvnw.cmd
+pom.xml
+.mvn
+README.md
+
+# 3. ⚠️ 重要：千万不要忽略 target/
+# target/
+# 这里注释掉或者不写，因为我们需要 target 里的 jar 包

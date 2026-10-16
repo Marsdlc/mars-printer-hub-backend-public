@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.mars.marsprinterhub.mapper.SpoolUsedSnapshotsMapper">
+
+    <insert id="insertBatchIgnore">
+        INSERT IGNORE INTO spool_used_snapshots
+        (
+        record_id,
+        percent,
+        image_url
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.recordId},
+            #{item.percent},
+            #{item.imageUrl}
+            )
+        </foreach>
+    </insert>
+
+</mapper>

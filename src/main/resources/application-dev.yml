@@ -1,0 +1,11 @@
+# 关闭mybatis-plus日志
+mybatis-plus:
+  configuration:
+    log-impl:
+
+# 拓竹云服务配置
+bambu:
+  # MQTT 连接配置
+  mqtt:
+    # 是否初始化所有设备
+    init-all: true

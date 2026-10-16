@@ -1,0 +1,263 @@
+server:
+  port: 8123
+  tomcat:
+    threads:
+      max: 60
+      min-spare: 5
+    accept-count: 100
+    max-connections: 512
+  servlet:
+    context-path: /api
+
+spring:
+  # 开放更大的文件上传体积
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 120MB
+  application:
+    name: mars-printer-hub
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/mars_printer_hub
+    username: root
+    password: 123456
+  # Flyway configuration
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+    locations: classpath:db/migration
+  # Redis 配置
+  data:
+    redis:
+      # Redis 数据库索引（默认为0）
+      database: 1
+      # Redis 服务器地址
+      host: 127.0.0.1
+      # Redis 服务器连接端口
+      port: 6379
+      # Redis服务器连接密码（默认为空）
+      # password:
+      # 连接超时时间
+      timeout: 10s
+      lettuce:
+        pool:
+          # 连接池最大连接数
+          max-active: 30
+          # 连接池最大阻塞等待时间（使用负值表示没有限制）
+          max-wait: 3s
+          # 连接池中的最大空闲连接
+          max-idle: 8
+          # 连接池中的最小空闲连接
+          min-idle: 0
+  profiles:
+    active: local
+  config:
+    import:
+      - optional:classpath:application-version.yml
+  session:
+    store-type: redis
+    timeout: 30d
+
+# 日志配置
+logging:
+  level:
+    # 隐藏 Tomcat 优雅关闭的详细日志
+    org.springframework.boot.web.embedded.tomcat.GracefulShutdown: WARN
+    # 隐藏腾讯云 COS 客户端的详细日志和堆栈跟踪
+    com.qcloud.cos: ERROR
+    com.qcloud.cos.http.DefaultCosHttpClient: ERROR
+    # Spring Boot 启动和关闭相关
+    org.springframework.boot: WARN
+    org.springframework.context: WARN
+    # 根日志级别
+    root: INFO
+
+mybatis-plus:
+  configuration:
+    # MyBatis 配置
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-field: is_delete
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+    # 开启 sql 执行器
+    enable-sql-runner: true
+
+# springdoc-openapi项目配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan: cn.mars.marsprinterhub.controller
+
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+
+############## Sa-Token 配置 (文档: https://sa-token.cc) ##############
+sa-token:
+  # token 名称（同时也是 cookie 名称）
+  token-name: Authorization
+  # token 有效期（单位：秒） 默认30天，-1 代表永久有效
+  timeout: 2592000
+  # token 最低活跃频率（单位：秒），如果 token 超过此时间没有访问系统就会被冻结，默认-1 代表不限制，永不冻结
+  active-timeout: -1
+  # 是否允许同一账号多地同时登录 （为 true 时允许一起登录, 为 false 时新登录挤掉旧登录）
+  is-concurrent: true
+  # 在多人登录同一账号时，是否共用一个 token （为 true 时所有登录共用一个 token, 为 false 时每次登录新建一个 token）
+  is-share: false
+  # token 风格（默认可取值：uuid、simple-uuid、random-32、random-64、random-128、tik）
+  token-style: uuid
+  # 是否输出操作日志
+  is-log: true
+
+# Bucket4j 分布式限流
+bucket4j:
+  enabled: true
+  cache-to-use: redis-jedis
+  methods:
+    - name: cloud-login
+      cache-name: rate-limit
+      rate-limit:
+        cache-key: "T(cn.dev33.satoken.stp.StpUtil).getLoginIdAsLong().toString()"
+        bandwidths:
+          - capacity: 5
+            refill-capacity: 5
+            time: 600
+            unit: seconds
+    - name: sms-code
+      cache-name: rate-limit
+      rate-limit:
+        cache-key: "T(cn.dev33.satoken.stp.StpUtil).getLoginIdAsLong().toString()"
+        bandwidths:
+          - capacity: 1
+            refill-capacity: 1
+            time: 60
+            unit: seconds
+          - capacity: 5
+            refill-capacity: 5
+            time: 1
+            unit: hours
+    - name: open-api
+      cache-name: rate-limit
+      rate-limit:
+        cache-key: "T(java.lang.String).valueOf(#request.getAttribute(T(cn.mars.marsprinterhub.openapi.OpenApiRequestAttributes).OPEN_API_USER_ID))"
+        bandwidths:
+          - capacity: 60
+            refill-capacity: 60
+            time: 60
+            unit: seconds
+
+passkey:
+  rp-id: localhost
+  rp-name: Mars Printer Hub
+  origins:
+    - http://localhost:5173
+    - http://localhost:8123
+  challenge-ttl-seconds: 300
+  timeout-milliseconds: 60000
+
+# VIP 配置
+vip:
+  # 内部接口验证 Key；未配置时禁用激活码生成接口
+  internal-key: ${VIP_INTERNAL_KEY:}
+
+# 拓竹云服务配置
+bambu:
+  # 是否内网模式
+  intranet: false
+  cloud:
+    # 是否启用拓竹云服务
+    enabled: true
+    # 请求超时时间（毫秒）
+    request-timeout: 10000
+    # 连接超时时间（毫秒）
+    connect-timeout: 5000
+    # 最大重试次数
+    max-retries: 3
+    # 重试间隔（毫秒）
+    retry-interval: 1000
+    # 是否启用 SSL
+    ssl-enabled: true
+    # 用户代理字符串
+    user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    # 缓存配置
+    cache:
+      # 是否启用缓存
+      enabled: true
+      # 设备列表缓存时间（秒）
+      device-list-ttl: 300
+      # 认证token缓存时间（秒）
+      auth-token-ttl: 3600
+  
+  # MQTT 连接配置
+  mqtt:
+    # 连接超时时间（秒）
+    connection-timeout: 30
+    # 保持连接间隔（秒）
+    keep-alive-interval: 60
+    # 最大重连尝试次数
+    max-reconnect-attempts: 5
+    # 重连间隔（毫秒）
+    reconnect-interval: 5000
+    # 本地连接优先
+    prefer-local-connection: true
+    # 本地连接超时时间（秒）
+    local-connection-timeout: 10
+    # 消息质量等级
+    qos: 0
+    # 是否初始化所有 mqtt 连接
+    init-all: false
+
+  # 视频流转码配置
+  video:
+    # ffmpeg 可执行文件路径，默认通过 PATH 查找
+    ffmpeg-path: ffmpeg
+    # HLS 分片时长（秒）
+    segment-duration: 1
+    # 播放列表保留分片数量
+    playlist-size: 3
+    # 使用 TCP 拉取 RTSP 流可提高稳定性
+    use-tcp-transport: true
+    # 清理过期分片并尽快更新播放列表（必须开启，否则分片文件会无限累积）
+    delete-expired-segments: true
+    append-list: false
+    # 省略结束标签，浏览器能更快追帧
+    omit-end-list: true
+    # 禁止缓存提升实时性
+    allow-cache: false
+    # GOP 大小控制关键帧间隔
+    gop-size: 30
+    # 有些机型输出 H264，可直接拷贝避免转码延迟
+    prefer-copy-codec: false
+    # ffmpeg 启动探测超时时间
+    startup-probe-timeout: 3s
+    # 停止推流后的清理延迟
+    cleanup-delay: 2s
+
+# 对象存储配置
+cos:
+  client:
+    enabled: false
+
+# RustFS 对象存储配置（兼容 S3 API）
+rustfs:
+  client:
+    # 是否启用 RustFS 存储
+    enabled: false
+
+# Cloudflare R2 对象存储配置（兼容 S3 API）
+r2:
+  client:
+    # 是否启用 R2 存储
+    enabled: false
